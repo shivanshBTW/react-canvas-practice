@@ -1,7 +1,6 @@
 import React, {Component} from 'react';
 import withStyles from "@material-ui/core/styles/withStyles";
 import AppStyles from "./AppStyles";
-import testImage from './testImage.jpeg';
 import createMuiTheme from "@material-ui/core/styles/createMuiTheme";
 import {MuiThemeProvider} from "@material-ui/core";
 
@@ -22,24 +21,30 @@ const darkTheme = createMuiTheme({
 
 let styles = AppStyles;
 
-let canvasDimensions = {
-   height: window.innerHeight,
-   width: window.innerWidth
-}
+
+// let canvasDimensions = {
+//    height: window.innerHeight,
+//    width: window.innerWidth
+// }
 
 class App extends Component {
    constructor(props) {
       super(props);
+      this.canvasContainerRef = React.createRef();
       this.canvasRef = React.createRef();
-
       this.state = {
-         lineArray: []
+         lineArray: [],
+         canvasDimensions: {
+            height: 0,
+            width: 0
+         }
       }
    }
 
    componentDidMount = () => {
       // this.drawImage();
       this.startDrawing()
+      // console.log(this.canvasContainerRef.current.offsetWidth);
    }
 
    componentDidUpdate = (prevProps, prevState) => {
@@ -50,49 +55,57 @@ class App extends Component {
    }
 
 
-   drawImage = () => {
-      let ctx = this.canvasRef.current.getContext('2d');
-      let imageObj1 = new Image();
-      imageObj1.src = testImage;
-      // imageObj1.setAttribute('','')
-      //
-      imageObj1.onload = () => {
-         this.canvasRef.current.height = canvasDimensions.height;
-         this.canvasRef.current.width = canvasDimensions.width;
-         ctx.drawImage(imageObj1, 0, 0, canvasDimensions.width, canvasDimensions.height);
-      };
-         this.startDrawing()
-
-   };
+   // drawImage = () => {
+   //    let ctx = this.canvasRef.current.getContext('2d');
+   //    let imageObj1 = new Image();
+   //    imageObj1.src = testImage;
+   //    // imageObj1.setAttribute('','')
+   //    //
+   //    imageObj1.onload = () => {
+   //       this.canvasRef.current.height = canvasDimensions.height;
+   //       this.canvasRef.current.width = canvasDimensions.width;
+   //       ctx.drawImage(imageObj1, 0, 0, canvasDimensions.width, canvasDimensions.height);
+   //    };
+   //       this.startDrawing()
+   //
+   // };
 
    startDrawing = () => {
-      let ctx = this.canvasRef.current.getContext('2d');
+      // let ctx = this.canvasRef.current.getContext('2d');
+      // this.canvasRef.current.width = canvasDimensions.width;
+      // this.canvasRef.current.height = canvasDimensions.height;
+      this.updateDimensions();
       this.canvasRef.current.addEventListener("mousedown", this.addNewPoint);
+      window.addEventListener('resize', this.updateDimensions)
       // this.canvasRef.addEventListener("mouseup",);
       // this.canvasRef.addEventListener("mouseout",);
+   }
 
+   updateDimensions = () => {
+      let width = this.canvasContainerRef.current.offsetWidth
+      let height = this.canvasContainerRef.current.offsetHeight
+      console.log('h', width);
+      console.log('w', width);
+      this.canvasRef.current.width = width
+      this.canvasRef.current.height = height
+      this.setState({canvasDimensions: {width, height}});
 
-      // ctx.beginPath();
-      // ctx.strokeStyle = 'red'
-      // ctx.moveTo(100, 100)
-      // ctx.lineTo(200, 100)
-      // ctx.stroke();
-      //
-      // // ctx.moveTo(100, 400)
-      // ctx.strokeStyle = 'purple'
-      // ctx.lineTo(200, 600)
-      // ctx.stroke();
+      this.updateCanvas();
    }
 
    addNewPoint = (e) => {
-      console.log(e);
+      // console.log(e);
       let ctx = this.canvasRef.current.getContext('2d');
-      this.setState({
-         lineArray: [...this.state.lineArray, {
-            x: e.x,
-            y: e.y
-         }]
-      })
+      if (this.state.lineArray.length < 4) {
+         this.setState({
+            lineArray: [...this.state.lineArray, {
+               x: e.pageX,
+               y: e.pageY,
+               canvasWidth: this.state.canvasDimensions.width,
+               canvasHeight: this.state.canvasDimensions.height,
+            }]
+         })
+      }
 
       // ctx.beginPath();
       // ctx.strokeStyle = 'red'
@@ -102,18 +115,31 @@ class App extends Component {
    }
 
    updateCanvas = () => {
-      let {lineArray} = this.state;
+      let {lineArray, canvasDimensions} = this.state;
       let ctx = this.canvasRef.current.getContext('2d');
       ctx.clearRect(0, 0, this.canvasRef.current.width, this.canvasRef.current.height)
       ctx.beginPath();
       ctx.strokeStyle = 'red'
 
       if (lineArray.length) {
-         ctx.moveTo(lineArray[0].x, lineArray[0].y)
+         ctx.moveTo(lineArray[0].x / lineArray[0].canvasWidth * this.state.canvasDimensions.width, lineArray[0].y / lineArray[0].canvasHeight * this.state.canvasDimensions.height)
       }
-      this.state.lineArray.map((lineObj, index) => {
-         ctx.lineTo(lineObj.x, lineObj.y)
+      lineArray.map((lineObj, index) => {
+         ctx.lineTo(lineObj.x / lineObj.canvasWidth * this.state.canvasDimensions.width, lineObj.y / lineObj.canvasHeight * this.state.canvasDimensions.height)
          ctx.stroke();
+         // if (index === lineArray.length - 1) {
+         //    ctx.lineTo(lineArray[0].x / lineArray[0].canvasWidth * this.state.canvasDimensions.width, lineArray[0].y / lineArray[0].canvasHeight * this.state.canvasDimensions.height)
+         //    ctx.stroke();
+         // }
+      })
+      ctx.closePath();
+      ctx.stroke();
+
+      ctx.beginPath();
+      lineArray.map((lineObj, index) => {
+         ctx.moveTo(lineObj.x / lineObj.canvasWidth * this.state.canvasDimensions.width, lineObj.y / lineObj.canvasHeight * this.state.canvasDimensions.height);
+         ctx.arc(lineObj.x / lineObj.canvasWidth * this.state.canvasDimensions.width, lineObj.y / lineObj.canvasHeight * this.state.canvasDimensions.height, 5, 0, 2 * Math.PI);
+         ctx.fill();
       })
    }
 
@@ -121,10 +147,15 @@ class App extends Component {
       let {classes} = this.props;
       return (
          <MuiThemeProvider theme={darkTheme}>
-            <div className={classes.root}>
-               <div className={classes.imageContainer}>
-                  <canvas ref={this.canvasRef}/>
-               </div>
+            <div ref={this.canvasContainerRef} className={classes.root}>
+               {/*<div className={classes.imageContainer}>*/}
+               <canvas
+                  className={classes.canvas}
+                  ref={this.canvasRef}
+                  // width={this.state.canvasDimensions.width}
+                  // height={this.state.canvasDimensions.height}
+               />
+               {/*</div>*/}
             </div>
          </MuiThemeProvider>
       );
