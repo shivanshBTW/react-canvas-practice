@@ -118,6 +118,7 @@ class App extends Component {
       this.updateCanvas();
    }
 
+
    updateCanvas = () => {
       let {lineArray, canvasDimensions} = this.state;
       let ctx = this.canvasRef.current.getContext('2d');
